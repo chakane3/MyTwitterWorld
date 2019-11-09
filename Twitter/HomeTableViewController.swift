@@ -12,19 +12,37 @@
 import UIKit
 
 class HomeTableViewController: UITableViewController {
+    
+    // Once we get a tweet we will store it in some kind of container
+      // Set up an array of dicts
+      var tweetArray = [NSDictionary]()
+      var numberOfTweets: Int!
+      let myRefreshControl = UIRefreshControl()
 
+    
+    
     @IBAction func onLogout(_ sender: Any) {
         TwitterAPICaller.client?.logout()
         self.dismiss(animated: true, completion: nil)
         UserDefaults.standard.set(false, forKey: "userLoggedIn")
     }
     
+
+    override func viewDidLoad() {
+          super.viewDidLoad()
+          // We also call the API here bc this is where content loads onto the screen
+          loadTweets()
+          myRefreshControl.addTarget(self, action: #selector(loadTweets), for: .valueChanged)
+          tableView.refreshControl = myRefreshControl
+        self.tableView.rowHeight = UITableView.automaticDimension
+        self.tableView.estimatedRowHeight = 150
+      }
     
-    // Once we get a tweet we will store it in some kind of container
-    // Set up an array of dicts
-    var tweetArray = [NSDictionary]()
-    var numberOfTweets: Int!
-    let myRefreshControl = UIRefreshControl()
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        self.loadTweets()
+    }
+    
     
     
     // Function to load tweets
@@ -68,12 +86,15 @@ class HomeTableViewController: UITableViewController {
         })
     }
     
+    
+    
     // Used when you want something to happen when the user scrolls to the end of the table
     override func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath){
         if indexPath.row + 1 == tweetArray.count{
             loadMoreTweets()
         }
     }
+    
     
     
     // This function calls the API
@@ -90,30 +111,27 @@ class HomeTableViewController: UITableViewController {
         if let imageData = data{
             cell.profileImageView.image = UIImage(data: imageData)
         }
+        
+        cell.setFavorite(tweetArray[indexPath.row]["favorited"] as! Bool)
+        cell.tweetId = tweetArray[indexPath.row]["id"] as! Int
+        cell.setRetweeted(tweetArray[indexPath.row]["retweeted"] as! Bool)
         return cell
     }
     
-    
-    
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        // We also call the API here bc this is where content loads onto the screen
-        loadTweets()
-        myRefreshControl.addTarget(self, action: #selector(loadTweets), for: .valueChanged)
-        tableView.refreshControl = myRefreshControl
-    }
 
-    
-    
     // MARK: - Table view data source
-
     override func numberOfSections(in tableView: UITableView) -> Int {
         // #warning Incomplete implementation, return the number of sections
         return 1
     }
 
+    
+    
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         // #warning Incomplete implementation, return the number of rows
         return tweetArray.count
     }
+    
+  
+
 }
